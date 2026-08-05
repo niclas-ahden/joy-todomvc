@@ -18,8 +18,7 @@ The first `nix develop` builds the pinned Roc compiler from source, which takes 
 If you don't want to use Nix then please install:
 
 * [`roc`](https://www.roc-lang.org/install)
-* [`simple-http-server`](https://github.com/TheWaWaR/simple-http-server)
-* `watchexec`
+* [`caddy`](https://caddyserver.com/docs/install)
 
 ## Structure
 
@@ -27,8 +26,11 @@ If you don't want to use Nix then please install:
 app.roc        The TodoMVC app. This is the file to play with.
 build.roc      Builds app.roc into www/app.wasm and copies Joy's runtime.js
                out of the platform bundle next to it.
-watch.roc      Serves www/ and reruns build.roc on change.
-www/           The page: index.html and style.css. The WASM and runtime.js
+watch.roc      Serves www/ with caddy and recompiles app.roc on change,
+               using roc's own `--watch`.
+Caddyfile      The dev server: serves www/ with revalidation forced, so a
+               rebuilt wasm is never shadowed by the last one.
+www/           The page: index.html and style.css. The wasm and runtime.js
                land here on build (both gitignored).
 ```
 

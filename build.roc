@@ -4,7 +4,7 @@
 #   ./build.roc
 #
 # To build app.roc into `www/app.wasm`. Run from the repo root, or let
-# ./watch.roc run it for you on every change.
+# ./watch.roc run it once at startup, for Joy's runtime.js.
 #
 # The Joy platform and joy-html arrive as release bundles through the URLs in
 # app.roc's header, prebuilt host and client runtime included, so there is
@@ -21,11 +21,14 @@ import pf.Stderr
 out_path = "www/app.wasm"
 
 main! = |_args| {
-	# roc can exit 0 without writing anything, so drop the outputs up front
-	# and check that they came back. Something stale must never reach the
-	# page ./watch.roc serves.
+	# roc can exit 0 without writing anything, so drop the wasm up front and
+	# check that it came back. Something stale must never reach the page
+	# ./watch.roc serves.
+	#
+	# runtime.js is left alone: copy_runtime! overwrites it below anyway, and
+	# dropping it took index.html's `import { mount } from './runtime.js'`
+	# down with any failed build, blanking the page at module load.
 	drop!(out_path)?
-	drop!("www/runtime.js")?
 
 	build_app!()?
 

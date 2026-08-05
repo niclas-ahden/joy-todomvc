@@ -102,8 +102,7 @@
           default = pkgs.mkShell {
             buildInputs = [
               roc
-              pkgs.simple-http-server # serves www/ during ./watch.roc
-              pkgs.watchexec # reruns ./build.roc on change
+              pkgs.caddy # serves www/ during ./watch.roc (see ./Caddyfile)
             ];
           };
         };
