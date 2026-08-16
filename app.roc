@@ -1,5 +1,5 @@
 app [Model, Msg, init, update, render, subscriptions] {
-	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.32.0/BS9gh12P9ExUgjfq7rpzBrzgV4PHijUt7Qh5vRELXULw.tar.zst",
+	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.32.2/Ce1qSM6yNhhF6UxSrQ3E4qaDDvqvsg2rtE7snUNHQJGi.tar.zst",
 	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.15.0/5Yoz712P8ed4MBW74eddTEJdZ92ZDCUbVGFkt4XXSuj9.tar.zst",
 }
 

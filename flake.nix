@@ -5,7 +5,7 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     roc-src = {
-      url = "github:roc-lang/roc/94cbed386c51a8739ced3be76e7ab7b84dd22852";
+      url = "github:roc-lang/roc/f70f90af362d751f409ea99af31579399d1ca224";
       flake = false;
     };
   };
@@ -51,13 +51,9 @@
           inherit version;
           src = roc-src;
 
-          # roc-lang/roc#10562, rebased onto the pin (the PR branches off an
-          # older main and conflicts there, but the only conflicts were the
-          # serialized-layout version bump and its golden hash, both taken
-          # from the PR). It fixes the exponential specialization of open Try
-          # chains (#10529), which otherwise makes builds take minutes. Drop
-          # this once the PR is merged and the pin moves past it.
-          patches = [ ./nix/roc-pr-10562.patch ];
+          # To patch the compiler, drop a diff in nix/ and list it here, e.g.
+          #
+          #   patches = [ ./nix/roc-pr-12345.patch ];
 
           nativeBuildInputs = [ zig ];
 
@@ -112,13 +108,30 @@
           default = roc;
         };
 
-        devShells = {
-          default = pkgs.mkShell {
-            buildInputs = [
-              roc
-              pkgs.caddy # serves www/ during ./watch.roc (see ./Caddyfile)
+        devShells =
+          let
+            testTools = [
+              pkgs.caddy # serves www/ during ./watch.roc and ./tests.roc (see ./Caddyfile)
+              pkgs.playwright-test # drives the browser during ./tests.roc
             ];
+            playwrightHook = ''
+              export PLAYWRIGHT_BROWSERS_PATH=${pkgs.playwright-driver.browsers}
+              export PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true
+            '';
+          in
+          {
+            default = pkgs.mkShell {
+              buildInputs = [ roc ] ++ testTools;
+              shellHook = playwrightHook;
+            };
+
+            # Everything ./tests.roc needs except roc itself, for runs
+            # against another compiler, like the nightly workflow. Prebuilt
+            # in the public Nix cache, so no compiler builds here.
+            tests = pkgs.mkShell {
+              buildInputs = testTools;
+              shellHook = playwrightHook;
+            };
           };
-        };
       });
 }

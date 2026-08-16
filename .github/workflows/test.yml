@@ -1,39 +1,63 @@
-name: Build
+name: Test
+
+# Run the browser tests on every push, with the Roc compiler the flake pins.
+# Testing against the latest Roc nightly is test-nightly-roc.yml's job.
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
-  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: test-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
+  test:
+    name: Test
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
-      - uses: cachix/install-nix-action@02a151ada4993995686f9ed4f1be7cfbb229e56f # v31
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v14
         with:
-          nix_path: nixpkgs=channel:nixos-unstable
-          # Trust magic-nix-cache-action's local cache server and accept its unsigned paths
-          extra_nix_config: |
-            substituters = https://cache.nixos.org http://127.0.0.1:37515
-            trusted-substituters = https://cache.nixos.org http://127.0.0.1:37515
-            require-sigs = false
+          # niclas-ahden.cachix.org serves the Roc compiler this flake pins,
+          # pushed there from a dev machine, so no runner builds it from
+          # source.
+          extra-conf: |
+            extra-substituters = https://niclas-ahden.cachix.org
+            extra-trusted-public-keys = niclas-ahden.cachix.org-1:FdGli1vBk0cTuVJV27Tau/JvlbW+Ly3pRwFByyqdke0=
+            accept-flake-config = true
 
-      - uses: DeterminateSystems/magic-nix-cache-action@v13
+      - name: Cache Nix store
+        uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          # Keep the saved store under GitHub's 10 GB/repo cache budget.
+          gc-max-store-size-linux: 5G
+          purge: true
+          purge-prefixes: nix-${{ runner.os }}-
+          purge-created: 0
+          purge-primary-key: never
 
-      # Includes building the Roc compiler from the rev pinned in flake.nix
-      # (cached by magic-nix-cache across runs).
-      - name: Fetch Nix dependencies
-        run: nix develop --command true
+      # --max-jobs 0 forbids local builds, so a compiler that is missing from
+      # the binary cache is reported here instead of quietly costing the run
+      # half an hour. The plain build after it is the fallback that keeps a
+      # stale cache from failing the run outright.
+      - name: Build Roc from the flake
+        run: |
+          nix build .#roc --max-jobs 0 || {
+            echo "::warning::The pinned Roc compiler is not in the binary cache, so this run builds it from source. Push it from a machine that has it: nix build .#roc --no-link --print-out-paths | cachix push niclas-ahden"
+            nix build .#roc
+          }
 
-      # build.roc builds app.roc into www/app.wasm, failing on any roc error
-      # or warning. The Joy platform and joy-html come from the release
-      # bundles in app.roc's header, so there is nothing else to build.
-      - name: Build the app
-        run: nix develop -c ./build.roc
+      # The default dev shell carries the pinned roc plus caddy and
+      # playwright, and ./tests.roc builds the app before testing it.
+      - name: Run the browser tests
+        run: nix develop -c ./tests.roc
