@@ -17,7 +17,7 @@ The first `nix develop` builds the pinned Roc compiler from source, which takes 
 
 If you don't want to use Nix then please install:
 
-* [`roc nightly-2026-08-18-e9be50a`](https://github.com/roc-lang/nightlies/releases/tag/nightly-2026-08-18-e9be50a)
+* [`roc nightly-2026-08-19-edec830`](https://github.com/roc-lang/nightlies/releases/tag/nightly-2026-08-19-edec830)
 * [`caddy`](https://caddyserver.com/docs/install)
 * [`playwright 1.61`](https://playwright.dev) (only needed for ./tests.roc)
 
