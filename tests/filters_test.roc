@@ -1,12 +1,10 @@
 app [main!] {
-	pf: platform "https://github.com/niclas-ahden/basic-cli/releases/download/0.23.0/7NpDhuqoqGFedmVLvmm1zjq37GCmaFGzwr5sz4ch9wTK.tar.zst",
-	playwright: "https://github.com/niclas-ahden/roc-playwright/releases/download/0.7.0/BW5do1pddeCsifMZcgwV4fjYH5mdy9sNA4moigRTvQNg.tar.zst",
-	spec: "https://github.com/niclas-ahden/roc-spec/releases/download/0.3.0/2v2CV8CLXRJmQRvfoHtPngAUGgE8jL6DDgXbugZhFVf5.tar.zst",
+	pf: platform "https://github.com/niclas-ahden/basic-cli/releases/download/0.24.0/2mx1EsQx1HEG7HdbW2CwUpexvmJZW4nSCpjbur5GXyRe.tar.zst",
+	playwright: "https://github.com/niclas-ahden/roc-playwright/releases/download/0.8.0/9boAetfXPFWCmMg5uavT1juSYFRw9zaGsWcfs4qspXde.tar.zst",
 }
 
 import TodoPage
-import playwright.Playwright
-import spec.Assert
+import playwright.Playwright exposing [assert!]
 
 # The three filter links in footer order
 all_filter = ".filters li:nth-child(1) a"
@@ -19,24 +17,24 @@ main! = |_args| {
 	TodoPage.add!(page, "One")?
 	TodoPage.add!(page, "Two")?
 	TodoPage.add!(page, "Three")?
-	Playwright.check!(page, TodoPage.toggle(2))?
+	page.find(TodoPage.toggle(2)).check!()?
 
-	Assert.eq(Playwright.query_count!(page, "${all_filter}.selected")?, 1) ? |e| AllShouldStartSelected(e)
+	assert!(page.find("${all_filter}.selected").is_visible()) ? |e| AllShouldStartSelected(Str.inspect(e))
 
-	Playwright.click!(page, active_filter)?
-	Assert.eq(Playwright.query_count!(page, ".todo-list li")?, 2) ? |e| ActiveShouldHideCompleted(e)
-	Assert.eq(Playwright.text_content!(page, TodoPage.label(1))?, "One") ? |e| FirstActiveTodo(e)
-	Assert.eq(Playwright.text_content!(page, TodoPage.label(2))?, "Three") ? |e| SecondActiveTodo(e)
-	Assert.eq(Playwright.query_count!(page, "${active_filter}.selected")?, 1) ? |e| SelectionShouldFollowTheClick(e)
+	page.find(active_filter).click!()?
+	assert!(page.find_all(".todo-list li").has_count(2)) ? |e| ActiveShouldHideCompleted(Str.inspect(e))
+	assert!(page.find(TodoPage.label(1)).has_text("One")) ? |e| FirstActiveTodo(Str.inspect(e))
+	assert!(page.find(TodoPage.label(2)).has_text("Three")) ? |e| SecondActiveTodo(Str.inspect(e))
+	assert!(page.find("${active_filter}.selected").is_visible()) ? |e| SelectionShouldFollowTheClick(Str.inspect(e))
 	# The count is over all todos, not the filtered view
-	Assert.eq(Playwright.text_content!(page, ".todo-count")?, "2 items left") ? |e| CountShouldIgnoreTheFilter(e)
+	assert!(page.find(".todo-count").has_text("2 items left")) ? |e| CountShouldIgnoreTheFilter(Str.inspect(e))
 
-	Playwright.click!(page, completed_filter)?
-	Assert.eq(Playwright.query_count!(page, ".todo-list li")?, 1) ? |e| CompletedShouldHideActive(e)
-	Assert.eq(Playwright.text_content!(page, TodoPage.label(1))?, "Two") ? |e| TheCompletedTodo(e)
+	page.find(completed_filter).click!()?
+	assert!(page.find_all(".todo-list li").has_count(1)) ? |e| CompletedShouldHideActive(Str.inspect(e))
+	assert!(page.find(TodoPage.label(1)).has_text("Two")) ? |e| TheCompletedTodo(Str.inspect(e))
 
-	Playwright.click!(page, all_filter)?
-	Assert.eq(Playwright.query_count!(page, ".todo-list li")?, 3) ? |e| AllShouldShowEverything(e)
+	page.find(all_filter).click!()?
+	assert!(page.find_all(".todo-list li").has_count(3)) ? |e| AllShouldShowEverything(Str.inspect(e))
 
-	Playwright.close!(browser)
+	browser.close!()
 }

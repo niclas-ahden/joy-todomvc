@@ -1,11 +1,16 @@
 {
   description = "joy-todomvc";
 
+  nixConfig = {
+    extra-substituters = [ "https://niclas-ahden.cachix.org" ];
+    extra-trusted-public-keys = [ "niclas-ahden.cachix.org-1:FdGli1vBk0cTuVJV27Tau/JvlbW+Ly3pRwFByyqdke0=" ];
+  };
+
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     roc-src = {
-      url = "github:roc-lang/roc/f70f90af362d751f409ea99af31579399d1ca224";
+      url = "github:roc-lang/roc/f8aa2b12f8a4079a11b3b7926a49d2cb3ecff697";
       flake = false;
     };
   };

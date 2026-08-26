@@ -1,12 +1,10 @@
 app [main!] {
-	pf: platform "https://github.com/niclas-ahden/basic-cli/releases/download/0.23.0/7NpDhuqoqGFedmVLvmm1zjq37GCmaFGzwr5sz4ch9wTK.tar.zst",
-	playwright: "https://github.com/niclas-ahden/roc-playwright/releases/download/0.7.0/BW5do1pddeCsifMZcgwV4fjYH5mdy9sNA4moigRTvQNg.tar.zst",
-	spec: "https://github.com/niclas-ahden/roc-spec/releases/download/0.3.0/2v2CV8CLXRJmQRvfoHtPngAUGgE8jL6DDgXbugZhFVf5.tar.zst",
+	pf: platform "https://github.com/niclas-ahden/basic-cli/releases/download/0.24.0/2mx1EsQx1HEG7HdbW2CwUpexvmJZW4nSCpjbur5GXyRe.tar.zst",
+	playwright: "https://github.com/niclas-ahden/roc-playwright/releases/download/0.8.0/9boAetfXPFWCmMg5uavT1juSYFRw9zaGsWcfs4qspXde.tar.zst",
 }
 
 import TodoPage
-import playwright.Playwright
-import spec.Assert
+import playwright.Playwright exposing [assert!]
 
 # Clicking away from an edit commits it, like Enter would
 main! = |_args| {
@@ -15,10 +13,10 @@ main! = |_args| {
 	TodoPage.add!(page, "Original")?
 
 	TodoPage.edit!(page, 1)?
-	Playwright.fill!(page, "${TodoPage.row(1)} .edit", "Committed by blur")?
-	Playwright.click!(page, "h1")?
-	Assert.eq(Playwright.text_content!(page, TodoPage.label(1))?, "Committed by blur") ? |e| BlurShouldCommit(e)
-	Assert.eq(Playwright.query_count!(page, ".todo-list li.editing")?, 0) ? |e| EditingShouldEnd(e)
+	page.find("${TodoPage.row(1)} .edit").fill!("Committed by blur")?
+	page.find("h1").click!()?
+	assert!(page.find(TodoPage.label(1)).has_text("Committed by blur")) ? |e| BlurShouldCommit(Str.inspect(e))
+	assert!(page.find_all(".todo-list li.editing").is_empty()) ? |e| EditingShouldEnd(Str.inspect(e))
 
-	Playwright.close!(browser)
+	browser.close!()
 }

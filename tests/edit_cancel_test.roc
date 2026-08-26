@@ -1,12 +1,10 @@
 app [main!] {
-	pf: platform "https://github.com/niclas-ahden/basic-cli/releases/download/0.23.0/7NpDhuqoqGFedmVLvmm1zjq37GCmaFGzwr5sz4ch9wTK.tar.zst",
-	playwright: "https://github.com/niclas-ahden/roc-playwright/releases/download/0.7.0/BW5do1pddeCsifMZcgwV4fjYH5mdy9sNA4moigRTvQNg.tar.zst",
-	spec: "https://github.com/niclas-ahden/roc-spec/releases/download/0.3.0/2v2CV8CLXRJmQRvfoHtPngAUGgE8jL6DDgXbugZhFVf5.tar.zst",
+	pf: platform "https://github.com/niclas-ahden/basic-cli/releases/download/0.24.0/2mx1EsQx1HEG7HdbW2CwUpexvmJZW4nSCpjbur5GXyRe.tar.zst",
+	playwright: "https://github.com/niclas-ahden/roc-playwright/releases/download/0.8.0/9boAetfXPFWCmMg5uavT1juSYFRw9zaGsWcfs4qspXde.tar.zst",
 }
 
 import TodoPage
-import playwright.Playwright
-import spec.Assert
+import playwright.Playwright exposing [assert!]
 
 main! = |_args| {
 	{ browser, page } = TodoPage.open!({})?
@@ -15,14 +13,14 @@ main! = |_args| {
 	edit_input = "${TodoPage.row(1)} .edit"
 
 	TodoPage.edit!(page, 1)?
-	Playwright.fill!(page, edit_input, "Throw this away")?
-	Playwright.key_press!(page, edit_input, Escape, [])?
-	Assert.eq(Playwright.text_content!(page, TodoPage.label(1))?, "Keep me") ? |e| EscapeShouldKeepTheTitle(e)
-	Assert.eq(Playwright.query_count!(page, ".todo-list li.editing")?, 0) ? |e| EditingShouldEnd(e)
+	page.find(edit_input).fill!("Throw this away")?
+	page.key_press!(edit_input, Escape, [])?
+	assert!(page.find(TodoPage.label(1)).has_text("Keep me")) ? |e| EscapeShouldKeepTheTitle(Str.inspect(e))
+	assert!(page.find_all(".todo-list li.editing").is_empty()) ? |e| EditingShouldEnd(Str.inspect(e))
 
 	# The thrown-away draft must not leak into the next edit
 	TodoPage.edit!(page, 1)?
-	Assert.eq(Playwright.input_value!(page, edit_input)?, "Keep me") ? |e| NextEditShouldStartFresh(e)
+	assert!(page.find(edit_input).has_value("Keep me")) ? |e| NextEditShouldStartFresh(Str.inspect(e))
 
-	Playwright.close!(browser)
+	browser.close!()
 }

@@ -7,14 +7,14 @@
 # and it rebuilds automatically. Refresh the page to see your changes (there
 # is no browser hot-reloading yet).
 #
-# Uses `roc build --watch` which writes no wasm at all in morst error cases
+# Uses `roc build --watch` which writes no wasm at all in most error cases
 # (e.g. type errors). If you refresh your browser and your app isn't showing up,
 # then check your terminal for errors (you'll also see a crash in the browser
 # console).
 #
 # Set the environment variable `JOY_WATCH_PORT` to change the port (default 8000).
 app [main!] {
-	pf: platform "https://github.com/niclas-ahden/basic-cli/releases/download/0.23.0/7NpDhuqoqGFedmVLvmm1zjq37GCmaFGzwr5sz4ch9wTK.tar.zst",
+	pf: platform "https://github.com/niclas-ahden/basic-cli/releases/download/0.24.0/2mx1EsQx1HEG7HdbW2CwUpexvmJZW4nSCpjbur5GXyRe.tar.zst",
 }
 
 import pf.Cmd
@@ -54,7 +54,7 @@ main! = |_args| {
 
 	Stdout.line!("=> Serving the app at http://localhost:${port}")?
 
-	# ./build.roc once up front so that Joy's runtime.js is copied out of the platform bundle
+	# ./build.roc once up front so that Joy's runtime.js is copied out of the platform
 	build = Cmd.new_str("./build.roc").exec_exit_code!()
 
 	build_code = match build {

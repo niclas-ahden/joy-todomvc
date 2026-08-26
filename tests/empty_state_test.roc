@@ -1,32 +1,30 @@
 app [main!] {
-	pf: platform "https://github.com/niclas-ahden/basic-cli/releases/download/0.23.0/7NpDhuqoqGFedmVLvmm1zjq37GCmaFGzwr5sz4ch9wTK.tar.zst",
-	playwright: "https://github.com/niclas-ahden/roc-playwright/releases/download/0.7.0/BW5do1pddeCsifMZcgwV4fjYH5mdy9sNA4moigRTvQNg.tar.zst",
-	spec: "https://github.com/niclas-ahden/roc-spec/releases/download/0.3.0/2v2CV8CLXRJmQRvfoHtPngAUGgE8jL6DDgXbugZhFVf5.tar.zst",
+	pf: platform "https://github.com/niclas-ahden/basic-cli/releases/download/0.24.0/2mx1EsQx1HEG7HdbW2CwUpexvmJZW4nSCpjbur5GXyRe.tar.zst",
+	playwright: "https://github.com/niclas-ahden/roc-playwright/releases/download/0.8.0/9boAetfXPFWCmMg5uavT1juSYFRw9zaGsWcfs4qspXde.tar.zst",
 }
 
 import TodoPage
-import playwright.Playwright
-import spec.Assert
+import playwright.Playwright exposing [assert!]
 
 # The list section and footer only exist while there are todos,
 # per the TodoMVC spec
 main! = |_args| {
 	{ browser, page } = TodoPage.open!({})?
 
-	Assert.eq(Playwright.query_count!(page, ".main")?, 0) ? |e| NoListSectionBeforeTodos(e)
-	Assert.eq(Playwright.query_count!(page, ".footer")?, 0) ? |e| NoFooterBeforeTodos(e)
+	assert!(page.find(".main").is_hidden()) ? |e| NoListSectionBeforeTodos(Str.inspect(e))
+	assert!(page.find(".footer").is_hidden()) ? |e| NoFooterBeforeTodos(Str.inspect(e))
 
 	# Enter on the empty input changes nothing
-	Playwright.key_press!(page, ".new-todo", Enter, [])?
-	Assert.eq(Playwright.query_count!(page, ".main")?, 0) ? |e| EmptySubmitShouldChangeNothing(e)
+	page.key_press!(".new-todo", Enter, [])?
+	assert!(page.find(".main").is_hidden()) ? |e| EmptySubmitShouldChangeNothing(Str.inspect(e))
 
 	TodoPage.add!(page, "Only todo")?
-	Assert.eq(Playwright.query_count!(page, ".main")?, 1) ? |e| ListSectionShouldAppear(e)
-	Assert.eq(Playwright.query_count!(page, ".footer")?, 1) ? |e| FooterShouldAppear(e)
+	assert!(page.find(".main").is_visible()) ? |e| ListSectionShouldAppear(Str.inspect(e))
+	assert!(page.find(".footer").is_visible()) ? |e| FooterShouldAppear(Str.inspect(e))
 
 	TodoPage.destroy!(page, 1)?
-	Assert.eq(Playwright.query_count!(page, ".main")?, 0) ? |e| ListSectionShouldGoAway(e)
-	Assert.eq(Playwright.query_count!(page, ".footer")?, 0) ? |e| FooterShouldGoAway(e)
+	assert!(page.find(".main").is_hidden()) ? |e| ListSectionShouldGoAway(Str.inspect(e))
+	assert!(page.find(".footer").is_hidden()) ? |e| FooterShouldGoAway(Str.inspect(e))
 
-	Playwright.close!(browser)
+	browser.close!()
 }

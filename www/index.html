@@ -15,8 +15,8 @@
     window.app = await mount({
       wasm: './app.wasm',
       root: document.getElementById('app'),
-      // flags is a string which is passed to your app's `init`. Put initial state here
-      // if you'd like. The "flags" example in Joy shows you how it works.
+      // The string your app's `init` receives. The "flags" example wants JSON
+      // here, e.g. `{"name": "Brödil", "karma": 99}`
       flags: '',
     });
   </script>

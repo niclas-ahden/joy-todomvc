@@ -1,6 +1,6 @@
 app [Model, Msg, init, update, render, subscriptions] {
-	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.32.2/Ce1qSM6yNhhF6UxSrQ3E4qaDDvqvsg2rtE7snUNHQJGi.tar.zst",
-	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.15.0/5Yoz712P8ed4MBW74eddTEJdZ92ZDCUbVGFkt4XXSuj9.tar.zst",
+	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.33.0/9UWLeQeJEUkXNGmZtibc1aqpL3gm6Li65GvXxsML5vFz.tar.zst",
+	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.16.0/56NBT6VkQ5xm87Wjzcv9mRuNT4RACiAmuAmPbXwc8cuk.tar.zst",
 }
 
 import html.Html exposing [Html, a, button, div, footer, h1, header, input, label, li, p, section, span, strong, text, ul]
@@ -8,7 +8,8 @@ import html.Attribute exposing [autofocus, checked, class, class_list, for_, id,
 import pf.Effect exposing [Effect]
 
 # TodoMVC (https://todomvc.com) as a client-side Joy app. All state lives in
-# the model, so a page reload starts you over.
+# the model, so a page reload starts you over. The page, styles and browser
+# tests live next to this file, so the whole example is this one directory.
 
 Todo : { id : U64, title : Str, done : Bool }
 

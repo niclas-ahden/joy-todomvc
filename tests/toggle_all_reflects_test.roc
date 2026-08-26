@@ -1,12 +1,10 @@
 app [main!] {
-	pf: platform "https://github.com/niclas-ahden/basic-cli/releases/download/0.23.0/7NpDhuqoqGFedmVLvmm1zjq37GCmaFGzwr5sz4ch9wTK.tar.zst",
-	playwright: "https://github.com/niclas-ahden/roc-playwright/releases/download/0.7.0/BW5do1pddeCsifMZcgwV4fjYH5mdy9sNA4moigRTvQNg.tar.zst",
-	spec: "https://github.com/niclas-ahden/roc-spec/releases/download/0.3.0/2v2CV8CLXRJmQRvfoHtPngAUGgE8jL6DDgXbugZhFVf5.tar.zst",
+	pf: platform "https://github.com/niclas-ahden/basic-cli/releases/download/0.24.0/2mx1EsQx1HEG7HdbW2CwUpexvmJZW4nSCpjbur5GXyRe.tar.zst",
+	playwright: "https://github.com/niclas-ahden/roc-playwright/releases/download/0.8.0/9boAetfXPFWCmMg5uavT1juSYFRw9zaGsWcfs4qspXde.tar.zst",
 }
 
 import TodoPage
-import playwright.Playwright
-import spec.Assert
+import playwright.Playwright exposing [assert!]
 
 # The toggle-all checkbox mirrors the todos: checked exactly while every
 # todo is completed, however that comes about
@@ -15,20 +13,20 @@ main! = |_args| {
 
 	TodoPage.add!(page, "First")?
 	TodoPage.add!(page, "Second")?
-	Assert.false(TodoPage.is_checked!(page, ".toggle-all")?) ? |e| ShouldStartUnchecked(e)
+	assert!(page.find(".toggle-all").is_unchecked()) ? |e| ShouldStartUnchecked(Str.inspect(e))
 
-	Playwright.check!(page, TodoPage.toggle(1))?
-	Assert.false(TodoPage.is_checked!(page, ".toggle-all")?) ? |e| OneOfTwoIsNotAll(e)
+	page.find(TodoPage.toggle(1)).check!()?
+	assert!(page.find(".toggle-all").is_unchecked()) ? |e| OneOfTwoIsNotAll(Str.inspect(e))
 
-	Playwright.check!(page, TodoPage.toggle(2))?
-	Assert.true(TodoPage.is_checked!(page, ".toggle-all")?) ? |e| CompletingTheLastShouldCheckIt(e)
+	page.find(TodoPage.toggle(2)).check!()?
+	assert!(page.find(".toggle-all").is_checked()) ? |e| CompletingTheLastShouldCheckIt(Str.inspect(e))
 
-	Playwright.uncheck!(page, TodoPage.toggle(1))?
-	Assert.false(TodoPage.is_checked!(page, ".toggle-all")?) ? |e| RevivingOneShouldUncheckIt(e)
+	page.find(TodoPage.toggle(1)).uncheck!()?
+	assert!(page.find(".toggle-all").is_unchecked()) ? |e| RevivingOneShouldUncheckIt(Str.inspect(e))
 
 	# Destroying the only active todo leaves only completed ones
 	TodoPage.destroy!(page, 1)?
-	Assert.true(TodoPage.is_checked!(page, ".toggle-all")?) ? |e| DestroyingTheActiveOneShouldCheckIt(e)
+	assert!(page.find(".toggle-all").is_checked()) ? |e| DestroyingTheActiveOneShouldCheckIt(Str.inspect(e))
 
-	Playwright.close!(browser)
+	browser.close!()
 }

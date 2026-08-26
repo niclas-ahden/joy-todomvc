@@ -6,11 +6,13 @@
 # To build app.roc into `www/app.wasm`. Run from the repo root, or let
 # ./watch.roc run it once at startup, for Joy's runtime.js.
 #
-# The Joy platform and joy-html arrive as release bundles through the URLs in
-# app.roc's header, prebuilt host and client runtime included, so there is
-# nothing to compile but the app itself.
+# joy-html arrives as a release bundle through the URL in app.roc's header.
+# The Joy platform is whatever app.roc's header names: a release bundle by
+# URL, or a Joy checkout by path (as in the Joy repo itself, where the
+# checkout's wasm host must exist: run ./build.roc at the repo root once).
+# Either way there is nothing to compile but the app itself.
 app [main!] {
-	pf: platform "https://github.com/niclas-ahden/basic-cli/releases/download/0.23.0/7NpDhuqoqGFedmVLvmm1zjq37GCmaFGzwr5sz4ch9wTK.tar.zst",
+	pf: platform "https://github.com/niclas-ahden/basic-cli/releases/download/0.24.0/2mx1EsQx1HEG7HdbW2CwUpexvmJZW4nSCpjbur5GXyRe.tar.zst",
 }
 
 import pf.Cmd
@@ -44,23 +46,29 @@ drop! = |file| {
 	}
 }
 
-# The page's ./runtime.js is Joy's client runtime, shipped inside the
-# platform bundle so it always matches the platform. The build above put the
-# bundle in roc's package cache, so the runtime is copied out of there next
-# to the wasm. Nothing to commit, exactly like the wasm itself.
+# The page's ./runtime.js is Joy's client runtime, shipped beside the
+# platform so it always matches it. A bundle platform (by URL, https or the
+# localhost http Joy's release gate serves drafts over) sits in roc's
+# package cache after the build, so the runtime is copied out of there. A
+# path platform is a Joy checkout, where the runtime lives in the checkout's
+# www/. Nothing to commit, exactly like the wasm itself.
 copy_runtime! = || {
 	url = platform_url!()?
-	hash = match url.split_last("/") {
-		Ok(at_slash) => at_slash.after.drop_suffix(".tar.zst")
-		Err(_) => url.drop_suffix(".tar.zst")
+	src = if url.starts_with("https://") or url.starts_with("http://") {
+		hash = match url.split_last("/") {
+			Ok(at_slash) => at_slash.after.drop_suffix(".tar.zst")
+			Err(_) => url.drop_suffix(".tar.zst")
+		}
+		home = Env.var_str!("HOME") ?? ""
+		cache = Env.var_str!("XDG_CACHE_HOME") ?? "${home}/.cache"
+		"${cache}/roc/packages/${hash}/www/runtime.js"
+	} else {
+		"${url.drop_suffix("platform/main.roc")}www/runtime.js"
 	}
-	home = Env.var_str!("HOME") ?? ""
-	cache = Env.var_str!("XDG_CACHE_HOME") ?? "${home}/.cache"
-	src = "${cache}/roc/packages/${hash}/www/runtime.js"
 	if Path.utf8(src).is_file!()? {
 		run!("cp", [src, "www/runtime.js"])
 	} else {
-		fail!("no runtime.js at ${src}; is app.roc's platform URL a Joy bundle?")
+		fail!("no runtime.js at ${src}. Is app.roc's platform a Joy bundle or checkout?")
 	}
 }
 

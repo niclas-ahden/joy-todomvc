@@ -8,16 +8,23 @@
 # through roc-spec, driving a real browser with roc-playwright. Accepts a
 # filename pattern (substring) and --fail-fast, e.g. `./tests.roc edit`.
 #
+# A full run (no arguments) ends with a smoke pass over ./watch.roc: start
+# it, wait for its server, then drive one browser test against it. That
+# covers the dev loop the scripts and Caddyfile promise, not just the app.
+#
 # Run from the repo root, inside `nix develop` (for roc, caddy and
 # playwright).
 app [main!] {
-	pf: platform "https://github.com/niclas-ahden/basic-cli/releases/download/0.23.0/7NpDhuqoqGFedmVLvmm1zjq37GCmaFGzwr5sz4ch9wTK.tar.zst",
+	pf: platform "https://github.com/niclas-ahden/basic-cli/releases/download/0.24.0/2mx1EsQx1HEG7HdbW2CwUpexvmJZW4nSCpjbur5GXyRe.tar.zst",
 }
 
 import pf.Cmd
+import pf.Http
 import pf.OsStr exposing [OsStr]
+import pf.Sleep
 import pf.Stderr
 import pf.Stdout
+import pf.Url
 
 main! : List(OsStr) => Try({}, _)
 main! = |os_args| {
@@ -39,11 +46,19 @@ main! = |os_args| {
 
 	code = run_suite!(use_systemd, forwarded)?
 
-	if code == 0 {
-		Ok({})
-	} else {
+	if code != 0 {
 		Stderr.line!("The browser tests failed with exit code ${code.to_str()}")?
-		Err(TestsFailed(code))
+		Err(TestsFailed(code))?
+	} else {
+		{}
+	}
+
+	# The smoke only belongs to a full run: filtered runs are someone
+	# iterating on one test, and the smoke would tax every iteration.
+	if forwarded.is_empty() {
+		smoke_watch!({})
+	} else {
+		Ok({})
 	}
 }
 
@@ -67,5 +82,53 @@ run_suite! = |use_systemd, forwarded| {
 		Cmd.new(OsStr.utf8("roc"))
 			.args(runner_args)
 			.exec_exit_code!()
+	}
+}
+
+# The dev loop: ./watch.roc must come up and serve a working app. One real
+# browser test against it proves the whole chain (caddy, the build it runs,
+# runtime.js, the /todomvc/ alias). It does not edit app.roc, so the
+# rebuild-on-change half of the loop is roc's own --watch to keep honest.
+# Clear of the worker servers at 9000+ and the dev default 8000.
+smoke_port = "8123"
+
+smoke_watch! : {} => Try({}, _)
+smoke_watch! = |{}| {
+	Stdout.line!("Smoke testing ./watch.roc on port ${smoke_port}...")?
+
+	watch = Cmd.new_str("./watch.roc")
+		.env_str("JOY_WATCH_PORT", smoke_port)
+		.spawn_leashed!() ? |e| CouldNotStartWatch(Str.inspect(e))
+
+	url = "http://localhost:${smoke_port}"
+	wait_for_server!(Url.parse("${url}/") ? |_| BadSmokeUrl(url), 150)?
+
+	code = Cmd.new_str("roc")
+		.args_str(["tests/add_test.roc"])
+		.env_str("JOY_E2E_URL", url)
+		.exec_exit_code!()
+		.ok_or(1)
+
+	watch.kill!() ?? {}
+
+	if code == 0 {
+		Stdout.line!("./watch.roc serves a working app")
+	} else {
+		Stderr.line!("The browser test against ./watch.roc failed with exit code ${code.to_str()}")?
+		Err(WatchSmokeFailed(code))
+	}
+}
+
+# Any successful response means the server is up. Bounded, so a watch.roc
+# that never serves fails the smoke instead of hanging it.
+wait_for_server! : Url.Url, U64 => Try({}, [WatchNeverServed, ..e])
+wait_for_server! = |url, attempts_left| {
+	if Http.get_utf8!(url).is_ok() {
+		Ok({})
+	} else if attempts_left == 0 {
+		Err(WatchNeverServed)
+	} else {
+		Sleep.millis!(200)
+		wait_for_server!(url, attempts_left - 1)
 	}
 }

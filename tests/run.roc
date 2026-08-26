@@ -5,8 +5,8 @@
 # Optional args: a filename pattern (substring) and --fail-fast.
 # Optional env: ROC_SPEC_MAX_WORKERS (default 4).
 app [main!] {
-	pf: platform "https://github.com/niclas-ahden/basic-cli/releases/download/0.23.0/7NpDhuqoqGFedmVLvmm1zjq37GCmaFGzwr5sz4ch9wTK.tar.zst",
-	spec: "https://github.com/niclas-ahden/roc-spec/releases/download/0.3.0/2v2CV8CLXRJmQRvfoHtPngAUGgE8jL6DDgXbugZhFVf5.tar.zst",
+	pf: platform "https://github.com/niclas-ahden/basic-cli/releases/download/0.24.0/2mx1EsQx1HEG7HdbW2CwUpexvmJZW4nSCpjbur5GXyRe.tar.zst",
+	spec: "https://github.com/niclas-ahden/roc-spec/releases/download/0.4.0/7fpzAnSVtkGcXL3dCsoK3j6wtebcEYiSSbGEpAMMnZbE.tar.zst",
 }
 
 import pf.Cmd
@@ -27,7 +27,7 @@ effects = {
 		Cmd.new(OsStr.utf8("roc"))
 			.args_str(["--opt=speed", file])
 			.envs_str(envs)
-			.spawn_grouped!(),
+			.spawn_leashed!(),
 	poll!: Cmd.Child.poll!,
 	kill_wait!: Cmd.Child.kill_wait!,
 	list_dir!: |dir| Path.list!(Path.utf8(dir)).map_ok(|entries| entries.map(Path.display)),
@@ -37,17 +37,18 @@ effects = {
 }
 
 # ./watch.roc serves on 8000, so the test servers start above it and a dev
-# server can keep running while the suite does.
+# server can keep running while the suite does. The server hooks below take
+# U16 worker indexes and worker_envs takes U64, so the base appears once per
+# width.
 base_port : U16
 base_port = 9000
 
-## Environment for each test process: tests derive their server URL from
-## http://$ROC_SPEC_HOST:($ROC_SPEC_BASE_PORT + $WORKER_INDEX)
+## Environment for each test process: its own server's URL, in the same
+## variable Joy's own e2e runner sets, so these tests run unchanged under
+## either runner.
 worker_envs : U64 -> List((Str, Str))
 worker_envs = |index| [
-	("WORKER_INDEX", index.to_str()),
-	("ROC_SPEC_BASE_PORT", base_port.to_str()),
-	("ROC_SPEC_HOST", "localhost"),
+	("JOY_E2E_URL", "http://localhost:${(9000 + index).to_str()}"),
 ]
 
 max_workers! : {} => U16
@@ -109,7 +110,7 @@ spawn_worker! = |index| {
 		Cmd.new_str("caddy")
 			.args_str(["run", "--config", "Caddyfile", "--adapter", "caddyfile"])
 			.env_str("JOY_WATCH_PORT", port.to_str())
-	_child = Cmd.spawn_grouped!(cmd) ? |e| ServerSpawnFailed(index, CaddyErr(e))
+	_child = Cmd.spawn_leashed!(cmd) ? |e| ServerSpawnFailed(index, CaddyErr(e))
 	Ok({})
 }
 
@@ -132,7 +133,7 @@ main! = |os_args| {
 
 	Stdout.line!("Starting ${workers.to_str()} test servers...")?
 
-	# Spawn all test servers first (spawn_grouped! so they die with the
+	# Spawn all test servers first (spawn_leashed! so they die with the
 	# runner), then poll them all until every one answers (up to ~30s).
 	TestEnvironment.start!({ sleep!: Sleep.millis! }, {
 		count: workers,
