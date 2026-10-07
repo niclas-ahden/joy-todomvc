@@ -1,11 +1,11 @@
 app [Model, Msg, init, update, render, subscriptions] {
-	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.33.0/9UWLeQeJEUkXNGmZtibc1aqpL3gm6Li65GvXxsML5vFz.tar.zst",
-	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.16.0/56NBT6VkQ5xm87Wjzcv9mRuNT4RACiAmuAmPbXwc8cuk.tar.zst",
+	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.34.0/2B3sC6U2dWkVUK2VY2gJS5Wej9YCDo3ZYq2e7tMWUCNp.tar.zst",
+	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.17.0/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst",
 }
 
-import html.Html exposing [Html, a, button, div, footer, h1, header, input, label, li, p, section, span, strong, text, ul]
+import html.Html exposing [a, button, div, footer, h1, header, input, label, li, p, section, span, strong, text, ul]
 import html.Attribute exposing [autofocus, checked, class, class_list, for_, id, on, on_check, on_click, on_input, on_key, placeholder, type, value]
-import pf.Effect exposing [Effect]
+import pf.Effect
 
 # TodoMVC (https://todomvc.com) as a client-side Joy app. All state lives in
 # the model, so a page reload starts you over. The page, styles and browser
